@@ -43,7 +43,9 @@ def remove_frame_rules(mask):
         maxLineGap=max(3, round(min(h, w) * 0.07)),
     )
     if lines is not None:
-        for x1, y1, x2, y2 in lines[:, 0]:
+        # OpenCV returns either (N, 1, 4) or (N, 4) depending on the
+        # platform/build; normalize both forms before unpacking.
+        for x1, y1, x2, y2 in np.asarray(lines).reshape(-1, 4):
             dx, dy = abs(int(x2) - int(x1)), abs(int(y2) - int(y1))
             horizontal = dx >= min_span and dy <= max(2, round(dx * 0.035))
             vertical = dy >= min_span and dx <= max(2, round(dy * 0.035))

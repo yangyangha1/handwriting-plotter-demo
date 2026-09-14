@@ -36,3 +36,15 @@ def test_frame_cleanup_keeps_central_cross_and_box_character():
     box = np.zeros_like(m)
     cv2.rectangle(box, (20, 20), (80, 80), 1, 3)
     np.testing.assert_array_equal(remove_frame_rules(box), box)
+
+
+def test_frame_cleanup_accepts_flat_hough_line_shape(monkeypatch):
+    # Some OpenCV builds return (N, 4) rather than (N, 1, 4).
+    monkeypatch.setattr(
+        cv2,
+        "HoughLinesP",
+        lambda *args, **kwargs: np.asarray([[0, 0, 99, 0]], dtype=np.int32),
+    )
+    mask = np.zeros((100, 100), np.uint8)
+    mask[0, :] = 1
+    assert not remove_frame_rules(mask).any()
