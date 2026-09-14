@@ -1,0 +1,14 @@
+{
+  "numpy": "2.3.5",
+  "opencv-python": "5.0.0.93",
+  "scipy": "1.17.0",
+  "scikit-image": "0.26.0",
+  "Pillow": "12.3.0",
+  "fonttools": "4.61.1",
+  "rapidocr": "3.9.2",
+  "onnxruntime": "1.30.0",
+  "torch": "2.14.0+cpu",
+  "pytest": "9.1.1",
+  "ruff": "0.16.7",
+  "playwright": "1.62.0"
+}

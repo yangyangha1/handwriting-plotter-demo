@@ -1,0 +1,41 @@
+.....................................                                    [100%]
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests/test_component_profile.py::test_component_model_uses_exact_owned_strokes
+PASSED tests/test_component_profile.py::test_component_conditioning_only_changes_owned_strokes
+PASSED tests/test_components_coverage.py::test_extract_components_and_ids_paths
+PASSED tests/test_components_coverage.py::test_resolve_stroke_matches
+PASSED tests/test_components_coverage.py::test_dictionary_and_exact_coverage
+PASSED tests/test_coverage.py::test_coverage_without_dictionary
+PASSED tests/test_facsimile.py::test_facsimile_recovers_observed_centerlines_and_widths
+PASSED tests/test_facsimile.py::test_facsimile_library_replays_real_variant
+PASSED tests/test_facsimile_layout_cursive.py::test_letterbox_roundtrip_preserves_character_cell_position
+PASSED tests/test_facsimile_layout_cursive.py::test_light_inter_character_connection_is_preserved
+PASSED tests/test_facsimile_layout_cursive.py::test_static_image_order_inference_detects_connected_pen_down_group
+PASSED tests/test_facsimile_layout_cursive.py::test_image_evidence_can_select_local_cursive_order_change
+PASSED tests/test_facsimile_layout_cursive.py::test_page_svg_uses_quad_and_page_gcode_keeps_connector_pen_down
+PASSED tests/test_gcode.py::test_gcode_pen_sequence
+PASSED tests/test_gcode.py::test_dynamic_pressure_uses_recovered_widths
+PASSED tests/test_geometry.py::test_resample_shape
+PASSED tests/test_geometry.py::test_similarity_transform
+PASSED tests/test_natural_page_workflow.py::test_normal_multiline_handwritten_page_requires_no_grid_or_manual_character_boxes
+PASSED tests/test_natural_text_segmentation.py::test_normal_handwriting_photo_is_rectified_and_split_without_grid
+PASSED tests/test_natural_text_segmentation.py::test_punctuation_has_narrower_soft_width_prior
+PASSED tests/test_review_rewrite.py::test_rejected_items_are_queued_for_rewrite_without_relabel
+PASSED tests/test_review_workflow.py::test_screened_items_are_not_vectorized
+PASSED tests/test_v05_models.py::test_position_classifier
+PASSED tests/test_v05_models.py::test_context_models_learn_position_structure_adjacency
+PASSED tests/test_v05_models.py::test_readiness_requires_more_samples
+PASSED tests/test_v05_models.py::test_readiness_can_be_ready_with_thresholds
+PASSED tests/test_v05_models.py::test_hierarchical_generation_blocks_incomplete
+PASSED tests/test_v08_learning.py::test_split_by_character_has_no_character_leakage
+PASSED tests/test_v08_learning.py::test_continual_model_accepts_then_rolls_back
+PASSED tests/test_v08_learning.py::test_active_learning_targets_missing_components
+PASSED tests/test_v08_learning.py::test_structure_nn_train_and_apply
+PASSED tests/test_v09_web_font.py::test_outline_holes_and_ttf_raster
+PASSED tests/test_v09_web_font.py::test_skeleton_loop_and_junction_edges
+PASSED tests/test_v09_web_font.py::test_unvalidated_model_cannot_replace_valid
+PASSED tests/test_v09_web_font.py::test_studio_replay_unseen_and_restart
+PASSED tests/test_v09_web_font.py::test_http_bootstrap_csrf_and_path_traversal
+PASSED tests/test_v09_web_font.py::test_paddle_numpy_arrays
+37 passed in 3.07s

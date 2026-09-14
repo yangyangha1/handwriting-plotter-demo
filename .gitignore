@@ -1,0 +1,24 @@
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+out/
+.cache/
+build/
+*.pyc
+
+# The bundled Make Me A Hanzi data is part of the application source.
+# Keep data/graphics.txt and data/dictionary.txt in the repository.
+
+# Local build and packaging scratch files.
+*.spec
+*.log
+*.tmp
+*.bak
+*.egg-info/
+
+# Generated demo exports are kept out of the source repository.
+examples/verified_session/
+examples/full_font_bundle.zip
+examples/full_experimental.ttf

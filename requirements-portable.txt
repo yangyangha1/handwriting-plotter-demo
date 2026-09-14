@@ -1,0 +1,3 @@
+# Project-local runtime dependencies.
+# The portable launcher installs this file into .venv, never into the user's main Python.
+-r requirements-tested.txt

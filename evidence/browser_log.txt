@@ -1,0 +1,14 @@
+upload
+ocr
+[INFO] 2026-09-12 00:27:18,887 [RapidOCR] base.py:23: Using engine_name: onnxruntime
+[INFO] 2026-09-12 00:27:18,916 [RapidOCR] download_file.py:60: File exists and is valid: /root/.local/lib/python3.12/site-packages/rapidocr/models/PP-OCRv6_det_small.onnx
+[INFO] 2026-09-12 00:27:18,916 [RapidOCR] main.py:63: Using /root/.local/lib/python3.12/site-packages/rapidocr/models/PP-OCRv6_det_small.onnx
+[INFO] 2026-09-12 00:27:18,950 [RapidOCR] base.py:23: Using engine_name: onnxruntime
+[INFO] 2026-09-12 00:27:18,951 [RapidOCR] download_file.py:60: File exists and is valid: /root/.local/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_mobile.onnx
+[INFO] 2026-09-12 00:27:18,951 [RapidOCR] main.py:63: Using /root/.local/lib/python3.12/site-packages/rapidocr/models/ch_ppocr_mobile_v2.0_cls_mobile.onnx
+[INFO] 2026-09-12 00:27:18,975 [RapidOCR] base.py:23: Using engine_name: onnxruntime
+[INFO] 2026-09-12 00:27:18,990 [RapidOCR] download_file.py:60: File exists and is valid: /root/.local/lib/python3.12/site-packages/rapidocr/models/PP-OCRv6_rec_small.onnx
+[INFO] 2026-09-12 00:27:18,990 [RapidOCR] main.py:63: Using /root/.local/lib/python3.12/site-packages/rapidocr/models/PP-OCRv6_rec_small.onnx
+learn
+generate
+Browser E2E passed

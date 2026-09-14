@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inkline · Handwriting Plotter</title>
+  <style>
+    :root {
+      --ink: #123c3a;
+      --ink-soft: #4b6b68;
+      --teal: #0d9488;
+      --teal-deep: #0f766e;
+      --teal-wash: #e7f7f4;
+      --orange: #c9551f;
+      --orange-wash: #fff0e8;
+      --paper: #fbfcfa;
+      --panel: #ffffff;
+      --line: #d7e4e1;
+      --line-strong: #bdd2ce;
+      --success: #22794f;
+      --warning: #9a5a13;
+      --danger: #b43b32;
+      --shadow: 0 20px 55px rgba(25, 67, 61, .08);
+      --radius: 18px;
+      --display: Georgia, "Times New Roman", serif;
+      --body: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: linear-gradient(135deg, #f3fbf8 0%, #fbfcfa 48%, #fff8f2 100%); font: 15px/1.55 var(--body); }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid rgba(13, 148, 136, .32); outline-offset: 2px; }
+    [data-step-panel][tabindex="-1"]:focus { outline: 3px solid rgba(13, 148, 136, .24); outline-offset: 5px; }
+    .shell { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+    .sidebar { padding: 28px 20px; border-right: 1px solid rgba(189, 210, 206, .8); background: rgba(255,255,255,.66); backdrop-filter: blur(16px); }
+    .brand { display: flex; gap: 12px; align-items: center; margin-bottom: 48px; }
+    .brand-mark { width: 38px; height: 38px; display: grid; place-items: center; color: white; background: var(--teal); border-radius: 12px; box-shadow: 0 10px 20px rgba(13,148,136,.2); }
+    .brand-mark svg { width: 22px; height: 22px; }
+    .brand strong { display: block; font: 700 18px var(--display); letter-spacing: -.02em; }
+    .brand small { color: var(--ink-soft); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+    .steps { display: grid; gap: 10px; }
+    .step { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center; padding: 10px 8px; border-radius: 14px; color: var(--ink-soft); transition: background .2s ease, color .2s ease, transform .2s ease; }
+    .step.active { color: var(--teal-deep); background: var(--teal-wash); transform: translateX(3px); }
+    .step.done { color: var(--success); }
+    .step-num { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%; font-weight: 700; font-size: 12px; }
+    .step.active .step-num { color: white; border-color: var(--teal); background: var(--teal); }
+    .step-title { font-weight: 700; font-size: 13px; }
+    .step-hint { display: block; font-size: 11px; color: var(--ink-soft); }
+    .sidebar-note { margin-top: 50px; padding: 15px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.75); color: var(--ink-soft); font-size: 12px; }
+    .sidebar-note strong { display: block; color: var(--ink); margin-bottom: 5px; }
+    .main { width: min(1320px, 100%); margin: 0 auto; padding: 30px clamp(20px, 4vw, 58px) 80px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 30px; }
+    .topbar-status { min-width: min(420px, 52%); display: grid; gap: 5px; }
+    .workflow-status { color: var(--ink-soft); font-size: 12px; text-align: right; overflow-wrap: anywhere; }
+    .workflow-progress { height: 5px; overflow: hidden; border-radius: 99px; background: #eaf1ef; }
+    .workflow-progress > span { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--teal), #61c6a8); transition: width .35s ease; }
+    .eyebrow { color: var(--teal-deep); font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .health { display: flex; align-items: center; gap: 8px; color: var(--ink-soft); font-size: 12px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warning); }
+    .dot.ok { background: var(--success); }
+    h1, h2, h3 { margin: 0; font-family: var(--display); letter-spacing: -.03em; }
+    h1 { max-width: 680px; margin-top: 8px; font-size: clamp(34px, 5vw, 67px); line-height: 1.02; }
+    .lead { max-width: 680px; margin: 16px 0 0; color: var(--ink-soft); font-size: 16px; }
+    .hero { display: flex; justify-content: space-between; gap: 30px; align-items: end; margin-bottom: 26px; }
+    .hero-badge { max-width: 240px; padding: 16px; border-left: 3px solid var(--orange); color: var(--ink-soft); background: rgba(255,240,232,.68); font-size: 13px; }
+    .card { border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,255,255,.88); box-shadow: var(--shadow); }
+    .setup { padding: 22px; }
+    .environment-card { margin-bottom: 18px; padding: 22px; }
+    .env-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .env-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .env-item { min-width: 0; padding: 13px; border: 1px solid var(--line); border-radius: 13px; background: #fbfdfc; }
+    .env-item.good { border-color: #b8dfcc; background: #f3fbf6; }
+    .env-item.missing { border-color: #efc3b5; background: #fff8f5; }
+    .env-item.optional { border-color: #e6d0a8; background: #fffaf0; }
+    .env-top { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+    .env-tools { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+    .env-label { font-size: 13px; font-weight: 800; }
+    .env-state { color: var(--ink-soft); font-size: 11px; white-space: nowrap; }
+    .env-item.good .env-state { color: var(--success); }
+    .env-item.missing .env-state { color: var(--danger); }
+    .env-item.optional .env-state { color: var(--warning); }
+    .env-command { display: block; overflow: auto; margin-top: 9px; padding: 8px; border-radius: 8px; color: #77412d; background: #fff1ea; font: 11px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; word-break: break-all; }
+    .env-copy { width: 100%; min-height: 32px; margin-top: 8px; padding: 6px 9px; font-size: 11px; }
+    .env-tools .env-copy { width: auto; min-height: 32px; margin: 0; white-space: nowrap; }
+    .env-toggle { width: 32px; min-height: 32px; display: inline-grid; place-items: center; padding: 0; border: 1px solid var(--line-strong); border-radius: 8px; color: var(--teal-deep); background: white; }
+    .env-toggle[aria-expanded="true"] .triangle { transform: rotate(90deg); }
+    .triangle { width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 7px solid currentColor; transition: transform .2s ease; }
+    .env-command-wrap { margin-top: 9px; }
+    .env-path { margin: -4px 0 14px; color: var(--ink-soft); font-size: 11px; word-break: break-all; }
+    .environment-card.collapsed .env-grid, .environment-card.collapsed .env-path { display: none; }
+    .environment-card.collapsed .section-head { margin-bottom: 0; }
+    .path-warning { margin: -4px 0 14px; padding: 10px 12px; border: 1px solid #e6d0a8; border-radius: 10px; color: var(--warning); background: #fffaf0; font-size: 12px; }
+    .setup-head, .section-head { display: flex; justify-content: space-between; gap: 16px; align-items: start; margin-bottom: 18px; }
+    .section-head h2 { font-size: 24px; }
+    .section-head p { margin: 4px 0 0; color: var(--ink-soft); font-size: 13px; }
+    .file-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) repeat(3, minmax(150px, 1fr)); gap: 12px; }
+    .file-box { min-width: 0; }
+    .file-box label { display: block; margin-bottom: 6px; color: var(--ink-soft); font-size: 12px; font-weight: 700; }
+    .file-input { width: 100%; padding: 10px; border: 1px dashed var(--line-strong); border-radius: 12px; background: #fbfdfc; color: var(--ink-soft); font-size: 12px; }
+    .file-input::file-selector-button { margin-right: 8px; padding: 6px 9px; border: 0; border-radius: 8px; color: var(--teal-deep); background: var(--teal-wash); cursor: pointer; font-weight: 700; }
+    .selected-preview { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: #f7fbfa; }
+    .selected-preview img { width: 72px; height: 54px; border-radius: 7px; object-fit: cover; background: white; }
+    .selected-preview span { min-width: 0; overflow: hidden; color: var(--ink-soft); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .helper { display: block; margin-top: 5px; color: var(--ink-soft); font-size: 11px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; }
+    .btn { min-height: 42px; padding: 10px 16px; border: 1px solid transparent; border-radius: 11px; font-weight: 800; transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(18,60,58,.12); }
+    .btn:disabled { cursor: not-allowed; opacity: .48; }
+    .btn-primary { color: white; background: var(--teal-deep); }
+    .btn-accent { color: white; background: var(--orange); }
+    .btn-ghost { color: var(--teal-deep); border-color: var(--line-strong); background: white; }
+    .status-line { min-height: 24px; margin-left: auto; color: var(--ink-soft); font-size: 13px; overflow-wrap: anywhere; }
+    .process-progress { margin-top: 16px; }
+    .process-progress-head { display: flex; justify-content: space-between; gap: 12px; color: var(--ink-soft); font-size: 12px; }
+    .process-progress .progress { margin-top: 6px; }
+    .progress.busy > span { width: 42%; animation: progress-sweep 1.2s ease-in-out infinite; }
+    @keyframes progress-sweep { 0%, 100% { transform: translateX(-100%); } 50% { transform: translateX(240%); } }
+    .workspace { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.4fr); gap: 18px; margin-top: 18px; }
+    .preview-card, .review-card { padding: 20px; }
+    .preview-frame { min-height: 350px; display: grid; place-items: center; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: repeating-linear-gradient(0deg, #f8fbfa, #f8fbfa 27px, #f0f5f3 28px); }
+    .preview-subhead { margin: 18px 0 9px; }
+    .preview-subhead h2 { font-size: 18px; }
+    .preview-frame.compact { min-height: 180px; }
+    .preview-frame img { display: block; max-width: 100%; max-height: 560px; object-fit: contain; }
+    .preview-empty { padding: 30px; color: var(--ink-soft); text-align: center; }
+    .review-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .review-toolbar-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+    .review-toolbar .btn { min-height: 34px; padding: 6px 10px; font-size: 12px; }
+    .review-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 8px; max-height: 420px; overflow: auto; padding: 8px; border: 1px solid var(--line); border-radius: 13px; background: #f8fbfa; }
+    .review-item { display: grid; grid-template-columns: auto 34px minmax(0, 1fr); align-items: center; gap: 6px; min-width: 0; padding: 7px; border: 1px solid var(--line); border-radius: 10px; background: white; }
+    .review-item:has(input:checked) { border-color: #9acdb2; background: #f3fbf6; }
+    .review-check { display: grid; place-items: center; min-width: 24px; min-height: 32px; }
+    .review-check input { width: 18px; height: 18px; accent-color: var(--teal); }
+    .thumb { width: 34px; height: 34px; display: block; border: 1px solid var(--line); border-radius: 7px; object-fit: contain; background: white; }
+    .review-meta { min-width: 0; }
+    .review-meta .char-cell { display: block; overflow: hidden; color: var(--ink); font: 20px/1.1 var(--display); text-overflow: ellipsis; white-space: nowrap; }
+    .review-confidence { display: block; margin-top: 2px; color: var(--ink-soft); font-size: 10px; }
+    .review-empty { grid-column: 1 / -1; }
+    .status-pill { display: inline-flex; padding: 4px 8px; border-radius: 999px; color: var(--ink-soft); background: #eef3f2; font-size: 11px; white-space: nowrap; }
+    .status-pill.ok { color: var(--success); background: #e8f6ee; }
+    .status-pill.warn { color: var(--warning); background: #fff3df; }
+    .status-pill.bad { color: var(--danger); background: #fff0ee; }
+    .review-note { margin: 12px 0 0; color: var(--ink-soft); font-size: 12px; }
+    .review-note strong { color: var(--danger); }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+    .metric { padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: white; }
+    .metric-completion { border-color: #a8d8c0; background: linear-gradient(145deg, #f4fcf7, #fff); }
+    .metric-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+    .metric-head .metric-value { margin-top: 0; }
+    .metric-label { color: var(--ink-soft); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+    .metric-value { margin-top: 4px; font: 700 22px var(--display); }
+    .progress { height: 8px; overflow: hidden; margin-top: 10px; border-radius: 99px; background: #eaf1ef; }
+    .progress > span { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--teal), #61c6a8); transition: width .35s ease; }
+    .completion-detail { min-height: 34px; margin-top: 7px; color: var(--ink-soft); font-size: 11px; line-height: 1.45; }
+    .coverage-block { margin-top: 12px; padding-top: 10px; border-top: 1px solid #dcebe3; }
+    .coverage-block .metric-value { font-size: 19px; }
+    .font-output { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .font-output h3 { margin: 0; font: 700 16px var(--display); }
+    .font-output-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .training { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, .8fr); gap: 18px; margin-top: 18px; }
+    .training-card, .generate-card { padding: 20px; }
+    .training-card pre { min-height: 170px; overflow: auto; margin: 0; padding: 14px; border-radius: 12px; color: #d8f5ee; background: #163c3a; font: 12px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; }
+    .generate-card { background: linear-gradient(150deg, #fff8f2, #fff); }
+    .generate-card textarea { width: 100%; min-height: 105px; resize: vertical; padding: 12px; border: 1px solid var(--line-strong); border-radius: 12px; color: var(--ink); background: rgba(255,255,255,.9); }
+    .artifact-card { margin-top: 18px; padding: 20px; }
+    .artifact-preview { min-height: 170px; display: grid; place-items: center; overflow: auto; border: 1px solid var(--line); border-radius: 14px; background: repeating-linear-gradient(45deg, #fafcfc, #fafcfc 12px, #f3f7f6 12px, #f3f7f6 24px); }
+    .artifact-preview img { max-width: 100%; max-height: 520px; background: white; }
+    .artifact-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    .artifact-links a { color: var(--teal-deep); font-size: 12px; font-weight: 700; }
+    .toast { position: fixed; right: 24px; bottom: 24px; z-index: 4; max-width: 360px; padding: 13px 15px; border: 1px solid var(--line-strong); border-radius: 12px; color: var(--ink); background: white; box-shadow: 0 16px 36px rgba(18,60,58,.16); transform: translateY(20px); opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    [hidden] { display: none !important; }
+    @media (max-width: 1020px) { .shell { display: block; } .sidebar { padding: 16px 20px; border-right: 0; border-bottom: 1px solid var(--line); } .brand { margin-bottom: 18px; } .steps { grid-template-columns: repeat(4, 1fr); } .sidebar-note { display: none; } .main { padding-top: 22px; } .file-grid { grid-template-columns: repeat(2, 1fr); } .env-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 760px) { .hero, .topbar { display: block; } .hero-badge { margin-top: 18px; max-width: none; } .workspace, .training { grid-template-columns: 1fr; } .metrics { grid-template-columns: repeat(2, 1fr); } .steps { gap: 4px; } .step { grid-template-columns: 28px 1fr; padding: 7px 4px; } .step-num { width: 26px; height: 26px; } .step-hint { display: none; } .file-grid, .env-grid { grid-template-columns: 1fr; } .status-line { margin: 0; width: 100%; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="流程导航">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 18.5 17.7 5.8a2.1 2.1 0 0 1 3 3L8 21.5 4 22l.5-4Z"/><path d="m14.5 9 2.8 2.8"/></svg></div>
+        <div><strong>Inkline</strong><small>Handwriting Plotter</small></div>
+      </div>
+      <nav class="steps">
+        <div class="step active" data-step="1"><span class="step-num">01</span><span><span class="step-title">导入识别</span><span class="step-hint">照片 → OCR 文本行</span></span></div>
+        <div class="step" data-step="2"><span class="step-num">02</span><span><span class="step-title">逐字审阅</span><span class="step-hint">只保留或排除</span></span></div>
+        <div class="step" data-step="3"><span class="step-num">03</span><span><span class="step-title">个人模型</span><span class="step-hint">覆盖度与验证</span></span></div>
+        <div class="step" data-step="4"><span class="step-num">04</span><span><span class="step-title">输出轨迹</span><span class="step-hint">复刻或推演</span></span></div>
+      </nav>
+      <div class="sidebar-note"><strong>证据链规则</strong>OCR 字符是只读标签。识别或切块不可靠时直接排除，生成 <code>rewrite_required.txt</code>，不把人工改字样本送进训练。</div>
+    </aside>
+    <main class="main">
+      <div class="topbar"><div class="eyebrow">Local studio · v1.2</div><div class="topbar-status"><div class="workflow-status" id="workflow-status" role="status" aria-live="polite">当前：第 1 步，等待导入图片</div><div class="workflow-progress" role="progressbar" aria-label="流程进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="workflow-progress-bar"></span></div><div class="health"><span id="health-dot" class="dot"></span><span id="health-text">正在检查 Python 环境…</span></div></div></div>
+      <section class="hero"><div><h1>把真实手写，留在它原来的位置。</h1><p class="lead">从普通纸面照片开始，自动识别文本行、切分字符、恢复原始墨迹轨迹，并让已经写过的字优先被真实重放。</p></div><div class="hero-badge">静态图片无法证明唯一的真实笔顺。系统会保留不确定性，并在低置信样本上要求重写。</div></section>
+
+      <section class="card environment-card" id="environment-card" aria-labelledby="environment-title">
+        <div class="section-head"><div><h2 id="environment-title">本地环境检查</h2><p id="environment-summary">第 1 步：先检测 Python 环境，再检查项目内虚拟环境、依赖和数据目录。</p></div><div class="env-actions"><button class="btn btn-ghost" id="toggle-env" type="button" aria-controls="env-grid" aria-expanded="true">折叠检查</button><button class="btn btn-ghost" id="refresh-env" type="button">重新检查</button></div></div>
+        <div class="env-path" id="data-dir-label">数据目录：检查中…</div>
+        <div class="path-warning" id="path-warning" hidden role="alert"></div>
+        <div class="env-grid" id="env-grid"><div class="preview-empty">正在检查…</div></div>
+      </section>
+
+      <section class="card setup" aria-labelledby="setup-title">
+        <div class="setup-head"><div class="section-head"><div><h2 id="setup-title">建立一批样本</h2><p>上传普通连续手写照片，不需要方格纸，也不需要逐字框选。</p></div></div><span class="status-pill" id="data-status">等待图片</span></div>
+        <form id="analyze-form">
+          <div class="file-grid">
+            <div class="file-box"><label for="image-file">手写照片 <span aria-hidden="true">*</span></label><input class="file-input" id="image-file" name="image" type="file" accept=".png,.jpg,.jpeg,.bmp,.webp" required><span class="helper">建议 2–4 行、自然字距、手机拍摄也可以。</span><div class="selected-preview" id="selected-image-preview" hidden><img id="selected-image-thumbnail" alt="已选择的手写照片预览"><span id="selected-image-name"></span></div></div>
+            <div class="file-box"><label for="threshold">二值化阈值</label><input class="file-input" id="threshold" type="number" min="0" max="255" value="0"><span class="helper">0 为自动；纸纹明显时可改为 65–105。</span></div>
+            <div class="file-box"><label for="engine">识别引擎</label><select class="file-input" id="engine"><option value="rapid">RapidOCR · CPU（较快）</option><option value="paddle">PaddleOCR · CPU（中等）</option><option value="gpu">GPU 引擎 · PaddlePaddle GPU（较快）</option><option value="cuda">CUDA 引擎 · ONNX Runtime CUDA（较快）</option></select><span class="helper" id="engine-hint">速度为同一张图片下的相对参考，实际取决于图片大小、模型和硬件；GPU/CUDA 需要先通过引擎检查。</span></div>
+            <div class="file-box"><label>工程数据</label><span class="helper">默认使用 `data/graphics.txt` 和同目录的 `dictionary.txt`。</span></div>
+          </div>
+          <div class="actions"><button class="btn btn-primary" id="analyze-btn" type="submit">开始 OCR 与自然切分</button><span class="status-line" id="status-line" role="status">上传后会在本机后台处理。</span></div><div class="process-progress" id="process-progress" hidden><div class="process-progress-head"><span id="process-progress-label">准备处理</span><span id="process-progress-value">0%</span></div><div class="progress" id="process-progress-track"><span id="process-progress-bar"></span></div></div>
+        </form>
+      </section>
+
+      <section class="workspace" data-step-panel="2" tabindex="-1" hidden aria-label="识别和审阅工作区">
+        <div class="card preview-card"><div class="section-head"><div><h2>原始照片</h2><p>保留作为页面几何与证据来源。</p></div></div><div class="preview-frame" id="source-preview"><div class="preview-empty">请先导入图片，完成 OCR 后这里显示原始手写文章。</div></div><div class="section-head preview-subhead"><div><h2>原始矢量</h2><p>导入图片后生成的墨迹轮廓。</p></div></div><div class="preview-frame compact" id="vector-preview"><div class="preview-empty">请先导入图片，生成矢量后这里显示轮廓。</div></div></div>
+        <div class="card review-card"><div class="section-head"><div><h2>逐字审阅</h2><p>默认全选（包括标点符号）；取消勾选不可靠的识别或切块。</p></div><span class="status-pill" id="review-count">0 个候选</span></div><div class="review-toolbar"><span class="helper">紧凑显示；确认保留项后会自动训练并分析样本。</span><div class="review-toolbar-actions"><button class="btn btn-ghost" id="select-all-btn" type="button" disabled>全选</button><button class="btn btn-ghost" id="clear-all-btn" type="button" disabled>取消全选</button><button class="btn btn-ghost" id="select-punctuation-btn" type="button">全选标点</button><button class="btn btn-ghost" id="clear-punctuation-btn" type="button">取消标点</button></div></div><div class="review-grid" id="review-body" role="group" aria-label="OCR 字符候选"><div class="preview-empty review-empty">完成 OCR 后显示字符候选。</div></div><p class="review-note"><strong>注意：</strong>识别错误或切块错误请取消纳入并重新书写，不能在这里改成另一个字符。</p><div class="actions"><button class="btn btn-accent" id="vectorize-btn" type="button" disabled>确认保留项并自动训练</button><button class="btn btn-ghost" id="train-btn" type="button" disabled>重新训练并验证</button></div></div>
+      </section>
+
+      <section class="metrics" data-step-panel="3" tabindex="-1" hidden aria-label="训练状态">
+        <div class="metric metric-completion"><div class="metric-head"><div class="metric-label">模型处理进度</div><div class="metric-value" id="metric-completion">—</div></div><div class="progress" id="completion-progress" role="progressbar" aria-label="模型处理进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="completion-bar"></span></div><div class="completion-detail" id="completion-detail">训练开始后，这里显示模型处理阶段；完成后再显示样本覆盖度。</div><div class="coverage-block"><div class="metric-head"><div class="metric-label">样本覆盖完成度</div><div class="metric-value" id="metric-coverage">—</div></div><div class="progress" id="coverage-progress" role="progressbar" aria-label="样本覆盖完成度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="coverage-bar"></span></div></div></div>
+        <div class="metric"><div class="metric-label">训练状态</div><div class="metric-value" id="metric-status">待开始</div><span class="helper" id="metric-status-hint">样本不足时不会开放推演。</span></div>
+        <div class="metric"><div class="metric-label">个人模型</div><div class="metric-value" id="metric-version">—</div><span class="helper" id="metric-validation">留出验证误差：—</span></div>
+        <div class="metric"><div class="metric-label">本批有效字</div><div class="metric-value" id="metric-samples">0</div><span class="helper" id="metric-rewrite">待识别</span></div>
+      </section>
+
+      <section class="training" data-step-panel="3" tabindex="-1" hidden><div class="card training-card"><div class="section-head"><div><h2>覆盖缺口与建议</h2><p>建议来自当前缺失偏旁、结构位置和验证薄弱区域。</p></div></div><pre id="coverage-text">完成一批样本后，这里会显示 READY / NEED_MORE_SAMPLES、缺口、版本和回滚信息。</pre></div><div class="card generate-card"><div class="section-head"><div><h2>输出一段文字</h2><p>已确认字样可以输出；未写字实验估计需要勾选，所有完整字库需要训练通过验收。</p></div></div><label class="sr-only" for="generate-text">要输出的文字</label><textarea id="generate-text" placeholder="例如：你好，今天的字迹会保留自然字距。" disabled></textarea><label><input type="checkbox" id="generate-draft"> 允许未写字实验估计</label><p class="helper">实验估计仅用于测试，不代表已经学会个人草书。</p><div class="actions"><button class="btn btn-primary" id="generate-btn" type="button" disabled>生成 SVG / JSON / G-code</button></div><div class="font-output"><h3>完整字库输出</h3><p class="helper" id="font-output-hint">模型训练完成后，这里分别提供已有字样完整字库和所有完整字库。</p><div class="actions"><button class="btn btn-ghost" id="export-observed-btn" type="button" disabled>导出已有字样完整字库</button><button class="btn btn-ghost" id="export-all-btn" type="button" disabled>导出所有完整字库</button></div><div class="font-output-links" id="font-output-links"></div></div></div></section>
+
+      <section class="card artifact-card" data-step-panel="4" tabindex="-1" hidden><div class="section-head"><div><h2>轨迹预览</h2><p>页面 SVG 维持原图中的字符位置；输出链接可下载后交给写字机流程。</p></div></div><div class="artifact-preview" id="artifact-preview"><span class="preview-empty">完成前面的步骤后，这里会显示生成的矢量文字。</span></div><div class="muted" id="artifact-summary">尚未生成文字。</div><div class="artifact-links" id="artifact-links"></div><details><summary>字库覆盖及来源</summary><pre id="artifact-report"></pre></details></section>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const state = { page: null, items: [], jobId: null, unlocked: 1, training: null, artifactUrls: [], previewObjectUrl: null, engineChecks: {} };
+    const $ = (id) => document.getElementById(id);
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const safeAsset = (url) => typeof url === 'string' && url.startsWith('/files/');
+    const showToast = (message) => { const el = $('toast'); el.textContent = message; el.classList.add('show'); window.clearTimeout(showToast.timer); showToast.timer = window.setTimeout(() => el.classList.remove('show'), 4200); };
+    const setEnvironmentCollapsed = (collapsed) => { const card = $('environment-card'); const toggle = $('toggle-env'); card.classList.toggle('collapsed', collapsed); toggle.setAttribute('aria-expanded', String(!collapsed)); toggle.textContent = collapsed ? '展开检查' : '折叠检查'; };
+    let trainingBusy = false;
+    const setTrainingProgress = (message, completed = null, total = null) => {
+      $('process-progress').hidden = true;
+      const determinate = Number.isFinite(completed) && total > 0;
+      const percent = determinate ? Math.round(completed / total * 100) : null;
+      $('metric-completion').textContent = determinate ? `${completed}/${total}` : '处理中';
+      $('completion-detail').textContent = message + (determinate ? `（本阶段 ${percent}%）` : '，请等待；完成后显示样本覆盖率。');
+      $('completion-progress').setAttribute('aria-label', '训练当前阶段进度');
+      $('completion-progress').classList.toggle('busy', !determinate);
+      $('completion-bar').style.width = determinate ? `${percent}%` : '40%';
+      if (determinate) $('completion-progress').setAttribute('aria-valuenow', String(percent));
+      else $('completion-progress').removeAttribute('aria-valuenow');
+    };
+    const startTraining = () => {
+      trainingBusy = true; $('analyze-btn').disabled = true; $('metric-coverage').textContent = '—'; $('coverage-bar').style.width = '0%'; $('coverage-progress').setAttribute('aria-valuenow', '0'); setUnlocked(3); setStep(3); focusStepPanel(3);
+      $('generate-btn').disabled = true;
+      setTrainingProgress('正在保存保留项并准备训练');
+    };
+    const setWorkflowProgress = (percent) => { const value = Math.max(0, Math.min(100, percent)); const bar = $('workflow-progress-bar'); bar.style.width = `${value}%`; bar.parentElement.setAttribute('aria-valuenow', String(Math.round(value))); };
+    const setStatus = (message) => { $('status-line').textContent = message; $('workflow-status').textContent = `当前：${message}`; };
+    const setProcessProgress = (percent, message, busy = false) => { const host = $('process-progress'); const bar = $('process-progress-bar'); host.hidden = false; bar.style.width = `${Math.max(0, Math.min(100, percent))}%`; $('process-progress-track').classList.toggle('busy', busy); $('process-progress-label').textContent = message; $('process-progress-value').textContent = `${Math.round(percent)}%`; };
+    const engineProfiles = { rapid: 'RapidOCR · CPU：较快，适合日常识别。', paddle: 'PaddleOCR · CPU：速度中等，模型能力更完整。', gpu: 'GPU 引擎：通常较快，需要 PaddlePaddle GPU 和 CUDA。', cuda: 'CUDA 引擎：通常较快，需要 ONNX Runtime GPU 和 CUDA。' };
+    const updateEngineHint = () => { $('engine-hint').textContent = `${engineProfiles[$('engine').value] || '请选择识别引擎'} 实际速度取决于图片大小、模型和硬件。`; };
+    const checkEngine = async (engine, force = false) => { const cached = state.engineChecks[engine]; if (!force && cached && Date.now() - cached.checkedAt < 30000) { if (!cached.result.ok) throw new Error(`${cached.result.label}不可用：${cached.result.message}`); return cached.result; } const result = await jsonFetch('/api/engine-check', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({engine}) }); state.engineChecks[engine] = {checkedAt: Date.now(), result}; if (!result.ok) throw new Error(`${result.label}不可用：${result.message}`); return result; };
+    const setStep = (number) => document.querySelectorAll('.step').forEach((el) => { const n = Number(el.dataset.step); el.classList.toggle('active', n === number); el.classList.toggle('done', n < number); });
+    const focusStepPanel = (number) => { const panel = document.querySelector(`[data-step-panel="${number}"]:not([hidden])`); if (panel) window.setTimeout(() => panel.focus({preventScroll: false}), 80); };
+    const setUnlocked = (number) => { const previous = state.unlocked; state.unlocked = Math.max(state.unlocked, number); document.querySelectorAll('[data-step-panel]').forEach((panel) => { panel.hidden = Number(panel.dataset.stepPanel) > state.unlocked; }); setStep(Math.min(state.unlocked, 4)); if (state.unlocked > previous) focusStepPanel(number); };
+    const jsonFetch = async (url, options = {}) => { const headers = new Headers(options.headers || {}); if (options.method && options.method !== 'GET') headers.set('X-Studio-Token', '__TOKEN__'); const res = await fetch(url, {...options, headers}); const body = await res.json().catch(() => ({})); if (!res.ok) throw new Error(body.error || `请求失败（${res.status}）`); return body; };
+    const poll = async (jobId, message = '正在处理，请稍候…') => { for (;;) { const job = await jsonFetch(`/api/jobs/${jobId}`); if (job.status === 'error') throw new Error(job.error || '后台任务失败'); if (job.status === 'done') return job.result; setStatus(job.progress?.message || message); if (trainingBusy) setTrainingProgress(job.progress?.message || message, job.progress?.completed, job.progress?.total); else if (Number.isFinite(job.progress?.completed) && job.progress?.total) setProcessProgress(job.progress.completed / job.progress.total * 100, job.progress.message || message, true); await new Promise((resolve) => setTimeout(resolve, 650)); } };
+    const runJob = async (url, data, message) => { const accepted = await jsonFetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }); state.jobId = accepted.job; return poll(accepted.job, message); };
+    const renderSelectedImage = (file) => { const host = $('selected-image-preview'); const image = $('selected-image-thumbnail'); const name = $('selected-image-name'); if (state.previewObjectUrl) { URL.revokeObjectURL(state.previewObjectUrl); state.previewObjectUrl = null; } if (!file) { host.hidden = true; image.removeAttribute('src'); name.textContent = ''; return; } state.previewObjectUrl = URL.createObjectURL(file); image.src = state.previewObjectUrl; name.textContent = `${file.name} · ${Math.round(file.size / 1024)} KB`; host.hidden = false; };
+    const renderPreview = (id, url, alt, emptyText) => { const host = $(id); host.replaceChildren(); if (safeAsset(url)) { const img = document.createElement('img'); img.src = url; img.alt = alt; host.append(img); } else { const span = document.createElement('span'); span.className = 'preview-empty'; span.textContent = emptyText; host.append(span); } };
+    const selectedIndices = () => [...document.querySelectorAll('#review-body input[type="checkbox"]:checked')].map((el) => Number(el.dataset.index));
+    const updateReviewActions = () => { const boxes = [...document.querySelectorAll('#review-body input[type="checkbox"]')]; const selected = boxes.filter((box) => box.checked).length; const total = boxes.length; $('review-count').textContent = total ? `已选 ${selected} / ${total}` : '0 个候选'; $('select-all-btn').disabled = !total || selected === total; $('clear-all-btn').disabled = !total || selected === 0; $('vectorize-btn').disabled = trainingBusy || selected === 0; $('train-btn').disabled = trainingBusy || selected === 0; boxes.forEach(box => { box.disabled = trainingBusy; }); };
+    const renderPage = (page) => {
+      const freshReview = state.page?.id !== page.id || state.items.length === 0;
+      state.page = page;
+      state.items = freshReview ? (page.items || []).map((item) => ({...item, included: true})) : (page.items || []);
+      $('metric-samples').textContent = String(state.items.filter((item) => item.included).length);
+      $('metric-rewrite').textContent = state.items.length ? '默认全选；请取消错误识别和错误切块' : '请先导入图片并完成 OCR';
+      renderPreview('source-preview', page.source, '原始手写文章', '请先导入图片，完成 OCR 后这里显示原始手写文章。');
+      renderPreview('vector-preview', page.outline, '原始手写文章的墨迹轮廓', '请先导入图片，生成矢量后这里显示轮廓。');
+      const body = $('review-body');
+      if (!state.items.length) { body.innerHTML = '<div class="preview-empty review-empty">当前没有 OCR 候选；请检查识别依赖或重新导入图片。</div>'; }
+      else { body.innerHTML = state.items.map((item) => { const crop = safeAsset(item.crop) ? `<img class="thumb" src="${esc(item.crop)}" alt="字符 ${esc(item.char)} 切块">` : '<span class="muted">无图</span>'; return `<div class="review-item"><label class="review-check"><input type="checkbox" data-index="${item.index}" ${item.included ? 'checked' : ''} aria-label="纳入字符 ${esc(item.char)}"></label>${crop}<div class="review-meta"><span class="char-cell" title="OCR 标签只读">${esc(item.char)}</span><span class="review-confidence">${(Number(item.confidence) * 100).toFixed(1)}%</span></div></div>`; }).join(''); }
+      updateReviewActions();
+    };
+    const refreshCurrentPage = async () => { if (!state.page) return; const stored = await jsonFetch('/api/state'); if (stored.pages?.[state.page.id]) renderPage(stored.pages[state.page.id]); };
+    const updateFontOutputs = (readiness) => { const ready = Boolean(readiness.ready); $('export-observed-btn').disabled = false; $('export-all-btn').disabled = !ready; $('font-output-hint').textContent = ready ? '两部分都可导出：已有字样完整字库包含全部已确认字样；所有完整字库包含笔画库中的全量字形和通过验收的推测字形。' : `已有字样完整字库可导出；所有完整字库暂不可用。模型处理已完成，但数据量或覆盖不足：${(readiness.reasons || []).slice(0, 2).join('；') || '请继续补写常用字。'}`; };
+    const renderFontPackage = (result) => { const entries = [['完整 TTF 字库', result.ttf], ['完整字库与路径包', result.bundle]]; $('font-output-links').innerHTML = entries.filter(([, url]) => safeAsset(url)).map(([label, url]) => `<a href="${esc(url)}" target="_blank" rel="noopener">${label}</a>`).join(''); showToast(`${result.title || '完整字库'}已生成。`); };
+    const renderTraining = (result) => {
+      trainingBusy = false; $('completion-progress').classList.remove('busy'); $('completion-progress').setAttribute('aria-label', '模型处理进度'); state.training = result; const readiness = result.readiness || {}; const coverage = result.coverage || {}; const pct = Math.round(Number(coverage.overall_completion || 0) * 100); const status = readiness.status || result.status || '已保存样本';
+      const componentPct = Math.round(Number(coverage.component_coverage || 0) * 100); const geometryPct = Math.round(Number(coverage.geometry_coverage || 0) * 100); const unique = coverage.unique_characters ?? result.observed ?? 0; const strokes = coverage.stroke_count_seen ?? 0; $('metric-completion').textContent = '已完成'; $('completion-bar').style.width = '100%'; $('completion-progress').setAttribute('aria-valuenow', '100'); $('metric-coverage').textContent = `${pct}%`; $('coverage-bar').style.width = `${Math.max(0, Math.min(100, pct))}%`; $('coverage-progress').setAttribute('aria-valuenow', String(pct)); $('completion-detail').textContent = readiness.ready ? `模型训练与分析已完成；样本覆盖 ${pct}%。已收集 ${unique} 个字、${strokes} 笔画。` : `模型训练与分析已完成，但数据量不足以通过完整字库验收。已收集 ${unique} 个字、${strokes} 笔画；偏旁覆盖 ${componentPct}%，几何覆盖 ${geometryPct}%。`; $('metric-status').textContent = readiness.ready ? 'READY' : `${status}（数据不足）`; $('metric-status-hint').textContent = readiness.ready ? '可以进行受门控的未写字推演，并导出所有完整字库。' : '可以导出已有字样完整字库；未写字和所有完整字库仍受数据覆盖门控。'; $('metric-version').textContent = readiness.active_model_version ? `v${String(readiness.active_model_version).padStart(4, '0')}` : '未建立'; $('metric-validation').textContent = `留出验证误差：${readiness.validation_error == null ? '—' : Number(readiness.validation_error).toFixed(6)}`; updateFontOutputs(readiness);
+      const reasons = (readiness.reasons || []).map((x) => `• ${x}`).join('\n') || '• 当前没有额外门控原因'; const suggestions = coverage.suggested_text || readiness.required_more_text || '暂无'; const fontAvailability = readiness.ready ? '已有字样完整字库和所有完整字库均可导出。' : '已有字样完整字库可导出；所有完整字库暂不可用。'; $('coverage-text').textContent = `训练状态：${status}\n模型处理：已完成\n样本覆盖：${pct}%\n有效字：${coverage.unique_characters ?? result.observed ?? '—'}；总笔画：${coverage.stroke_count_seen ?? '—'}\n\n字库输出：${fontAvailability}\n\n关键缺口：\n${reasons}\n\n建议继续补写：${suggestions}\n\n${(coverage.notes || []).join('\n')}`;
+      $('generate-text').disabled = false; $('generate-btn').disabled = false; setWorkflowProgress(100); setStatus(readiness.ready ? '模型处理完成，样本覆盖已达到输出门槛；第 4 步可以输出轨迹。' : '模型处理完成，但样本数据量不足；已有字样可导出，请按建议补写常用字后再生成完整字库。'); setUnlocked(4);
+    };
+    const renderArtifacts = (result) => { const entries = [['排版 SVG', result.preview], ['中心路径 SVG', result.center], ['下载 TTF', result.ttf], ['写字机 G-code', result.gcode], ['完整字库与路径包', result.bundle]].filter(([, url]) => safeAsset(url)); state.artifactUrls = entries.map(([, url]) => url); renderPreview('artifact-preview', result.preview, '生成的矢量文字', '生成完成后，这里显示矢量文字预览。'); $('artifact-links').innerHTML = entries.map(([label, url]) => `<a href="${esc(url)}" target="_blank" rel="noopener">${label}</a>`).join(''); $('artifact-summary').textContent = `字库 ${result.report?.charset_count ?? 0} 字；真实字样 ${result.report?.observed_count ?? 0} 字；实验估计 ${result.report?.experimental_count ?? 0} 字。`; $('artifact-report').textContent = JSON.stringify(result.report || {}, null, 2); };
+    const cleanCommand = (command) => String(command || '').replace(/^"[^"]+"\s+-m\s+pip\s+/i, 'python -m pip ');
+    const renderEnvironment = (health) => {
+      const pathWarning = $('path-warning'); pathWarning.hidden = !health.path_warning; pathWarning.textContent = health.path_warning || '';
+      const requiredModules = new Set(['numpy', 'cv2', 'scipy', 'skimage', 'PIL', 'rapidocr', 'onnxruntime']); const dependencies = (health.dependencies || []).map((item) => ({id: item.module, label: item.package, ok: Boolean(item.installed), required: requiredModules.has(item.module), details: `${item.purpose || ''} · ${item.installed ? `已安装 · ${health.runtime_mode === 'project-venv' ? '项目虚拟环境' : '当前运行环境'}` : `未安装 · ${health.runtime_mode === 'project-venv' ? '项目虚拟环境' : '当前运行环境'}`}`, install_command: cleanCommand(item.command), copy_command: item.copy_command || cleanCommand(item.command)}));
+      dependencies.push({id: 'graphics', label: 'graphics.txt', ok: Boolean(health.graphics_available), required: true, details: health.graphics_available ? 'Make Me A Hanzi 笔画库 · 已找到 · 项目 data 目录' : 'Make Me A Hanzi 笔画库 · 缺失', install_command: cleanCommand(health.data_command), copy_command: health.data_copy_command || cleanCommand(health.data_command)}); dependencies.push({id: 'dictionary', label: 'dictionary.txt', ok: Boolean(health.dictionary_available), required: true, details: health.dictionary_available ? '偏旁结构和逐笔匹配数据 · 已找到 · 项目 data 目录' : '偏旁结构和逐笔匹配数据 · 缺失', install_command: cleanCommand(health.data_command), copy_command: health.data_copy_command || cleanCommand(health.data_command)});
+      const missing = dependencies.filter((check) => !check.ok && check.required); const optional = dependencies.filter((check) => !check.ok && !check.required); const allReady = missing.length === 0; $('data-dir-label').textContent = `数据目录：${health.data_dir || '—'}；Python：${health.python_executable || health.python || '—'}；方式：${health.runtime_mode || '—'}`; $('health-dot').classList.toggle('ok', missing.length === 0); $('health-text').textContent = missing.length ? `待补齐：${missing.length} 项` : (optional.length ? '必需能力已就绪' : '项目环境已就绪'); $('environment-summary').textContent = missing.length ? `红色项目需要在当前项目环境中处理；缺失项不会阻止页面打开。可选项：${optional.map((check) => check.label).join('、') || '无'}` : (allReady ? (optional.length ? '必需环境检查通过，已自动收起；可选模块可展开查看。' : '全部环境检查通过，已自动收起检查明细。') : `必需能力已就绪；可选项待处理：${optional.map((check) => check.label).join('、') || '无'}`); setEnvironmentCollapsed(allReady);
+      $('env-grid').innerHTML = dependencies.map((check, index) => { const status = check.ok ? '已就绪' : (check.required ? '缺失' : '可选未安装'); const kind = check.ok ? 'good' : (check.required ? 'missing' : 'optional'); const commandId = `env-command-${index}`; const tools = !check.ok ? `<span class="env-tools"><button class="env-toggle" type="button" data-command-toggle="${commandId}" aria-controls="${commandId}" aria-expanded="false" aria-label="显示${esc(check.label)}安装命令"><span class="triangle" aria-hidden="true"></span></button><button class="btn btn-ghost env-copy" type="button" data-copy="${esc(check.copy_command)}">复制安装命令</button></span>` : ''; const command = !check.ok ? `<div class="env-command-wrap" id="${commandId}" hidden><code class="env-command">${esc(check.install_command)}</code></div>` : ''; return `<div class="env-item ${kind}"><div class="env-top"><span class="env-label">${esc(check.label)}</span><span class="env-tools"><span class="env-state">${status}</span>${tools}</span></div><div class="helper">${esc(check.details || '')}</div>${command}</div>`; }).join('');
+    };
+    const loadEnvironment = async () => { try { renderEnvironment(await jsonFetch('/api/environment')); state.engineChecks = {}; } catch (error) { $('health-text').textContent = '本地服务检查失败'; $('environment-summary').textContent = error.message; } };
+    $('toggle-env').addEventListener('click', () => { const collapsed = $('environment-card').classList.contains('collapsed'); setEnvironmentCollapsed(!collapsed); });
+    $('refresh-env').addEventListener('click', loadEnvironment);
+    $('env-grid').addEventListener('click', async (event) => { const copyButton = event.target.closest('[data-copy]'); if (copyButton) { try { await navigator.clipboard.writeText(copyButton.dataset.copy); showToast('安装命令已复制'); } catch (error) { showToast(copyButton.dataset.copy); } return; } const toggle = event.target.closest('[data-command-toggle]'); if (toggle) { const command = $(toggle.dataset.commandToggle); const expanded = toggle.getAttribute('aria-expanded') === 'true'; command.hidden = expanded; toggle.setAttribute('aria-expanded', String(!expanded)); } });
+    $('image-file').addEventListener('change', (event) => { const file = event.target.files[0]; renderSelectedImage(file); state.engineChecks = {}; $('data-status').textContent = file ? `已选择：${file.name}` : '等待图片'; setWorkflowProgress(0); setProcessProgress(0, file ? '图片已选择，等待开始处理' : '等待选择图片'); $('process-progress').hidden = !file; setStatus(file ? '已显示图片缩略图，请先确认识别引擎再开始。' : '请导入图片'); });
+    $('engine').addEventListener('change', async () => { updateEngineHint(); if (!$('image-file').files[0]) return; setStatus('正在提前检查所选识别引擎…'); try { const result = await checkEngine($('engine').value, true); setStatus(`${result.message} 可以开始处理。`); } catch (error) { showToast(error.message); setStatus(error.message); } });
+    const explainError = (error) => { if (error && typeof error.message === 'string' && error.message.trim()) return error.message.trim(); return String(error || '未知错误'); };
+    $('analyze-form').addEventListener('submit', async (event) => { event.preventDefault(); const file = $('image-file').files[0]; if (!file) { showToast('请导入图片'); setStatus('请导入图片'); return; } const engine = $('engine').value; const btn = $('analyze-btn'); let stage = '准备处理'; btn.disabled = true; setStep(1); setWorkflowProgress(4); setProcessProgress(5, '正在检查所选识别引擎…', true); setStatus('正在检查所选识别引擎…'); try { stage = '引擎检查'; const engineResult = await checkEngine(engine, true); setWorkflowProgress(10); setProcessProgress(12, `${engineResult.label}已通过检查，准备上传图片`); stage = '读取图片'; const image = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(',')[1]); reader.onerror = () => reject(new Error(`浏览器无法读取图片：${file.name}`)); reader.readAsDataURL(file); }); setWorkflowProgress(18); setProcessProgress(20, '正在上传图片并生成原始矢量…', true); stage = '生成原始矢量'; const page = await runJob('/api/upload', {image, threshold: Number($('threshold').value || 0)}, '正在生成原始矢量，请稍候…'); renderPage(page); setUnlocked(2); setWorkflowProgress(30); setProcessProgress(52, `${engineResult.label}正在识别文字…`, true); setStatus('原始照片和矢量已生成，正在 OCR 与自然切分…'); stage = `${engineResult.label} OCR`; const recognized = await runJob('/api/ocr', {id: page.id, engine}, `正在使用${engineResult.label}识别，请稍候…`); renderPage(recognized); setUnlocked(2); setWorkflowProgress(55); setProcessProgress(100, 'OCR 完成，请逐字审阅'); setStatus('OCR 完成：默认已全选（包括标点符号），请取消错误项后点击“确认保留项并自动训练”。'); showToast('OCR 完成：请逐字审阅并确认保留项。'); } catch (error) { const detail = explainError(error); const message = `处理失败（${stage}）：${detail}`; setProcessProgress(0, message); showToast(message); setStatus(message); } finally { $('process-progress-track').classList.remove('busy'); btn.disabled = false; } });
+    const setAllSelections = (selected) => { document.querySelectorAll('#review-body input[type="checkbox"]').forEach((box) => { box.checked = selected; }); updateReviewActions(); };
+    $('select-all-btn').addEventListener('click', () => setAllSelections(true));
+    $('clear-all-btn').addEventListener('click', () => setAllSelections(false));
+    const setPunctuation = (selected) => {
+      const punctuation = new Set(state.items.filter(item => /^[\p{P}]+$/u.test(item.char || '')).map(item => item.index));
+      document.querySelectorAll('#review-body input[type="checkbox"]').forEach(box => { if (punctuation.has(Number(box.dataset.index))) box.checked = selected; });
+      updateReviewActions();
+    };
+    $('select-punctuation-btn').addEventListener('click', () => setPunctuation(true));
+    $('clear-punctuation-btn').addEventListener('click', () => setPunctuation(false));
+    $('review-body').addEventListener('change', updateReviewActions);
+    $('vectorize-btn').addEventListener('click', async () => { const indices = selectedIndices(); if (!indices.length || !state.page) return showToast('至少选择一个正确字样'); $('vectorize-btn').disabled = true; $('train-btn').disabled = true; startTraining(); setWorkflowProgress(62); setTrainingProgress(`正在保存 ${indices.length} 个保留项…`); setStatus(`正在保存 ${indices.length} 个保留项…`); try { const result = await runJob('/api/learn', {id: state.page.id, indices}, '正在保存确认的字样，请稍候…'); await refreshCurrentPage(); $('metric-samples').textContent = String(result.observed ?? indices.length); setUnlocked(3); setWorkflowProgress(72); setTrainingProgress('字样已保存，正在训练并分析样本…'); setStatus('字样已保存，正在训练并分析样本…'); const training = await runJob('/api/train', {id: state.page.id, indices}, '正在训练并分析样本，请稍候…'); renderTraining(training); showToast('训练和样本分析完成，已显示整体完成度。'); } catch (error) { const detail = explainError(error); const message = `处理失败（保存或训练）：${detail}`; setTrainingProgress(message); $('metric-completion').textContent = '失败'; $('completion-progress').classList.remove('busy'); showToast(message); setStatus(message); } finally { trainingBusy = false; $('analyze-btn').disabled = false; $('process-progress-track').classList.remove('busy'); updateReviewActions(); } });
+    $('train-btn').addEventListener('click', async () => { const indices = selectedIndices(); if (!indices.length || !state.page) return showToast('至少选择一个正确字样'); $('train-btn').disabled = true; startTraining(); setWorkflowProgress(72); setTrainingProgress('正在重新训练并分析样本…'); setStatus('正在重新训练并分析样本…'); try { const result = await runJob('/api/train', {id: state.page.id, indices}, '正在重新训练并分析样本，请稍候…'); renderTraining(result); showToast('模型训练与验证完成。'); } catch (error) { const detail = explainError(error); const message = `处理失败（重新训练）：${detail}`; setTrainingProgress(message); $('metric-completion').textContent = '失败'; $('completion-progress').classList.remove('busy'); showToast(message); setStatus(message); } finally { trainingBusy = false; $('analyze-btn').disabled = false; $('process-progress-track').classList.remove('busy'); updateReviewActions(); } });
+    $('generate-btn').addEventListener('click', async () => { const text = $('generate-text').value.trim(); if (!text) return showToast('请输入要输出的文字。'); $('generate-btn').disabled = true; setWorkflowProgress(90); setStatus('正在生成 SVG、JSON 和 G-code…'); try { const result = await runJob('/api/generate', {text, draft: $('generate-draft').checked, all_chars: false, gap: 40, line_height: 1250, page_mm: 180, pen_up: 'M3 S0', pen_down: 'M3 S1000', feed: 1200, use_model: null}, '正在生成轨迹文件，请稍候…'); renderArtifacts(result); setWorkflowProgress(100); setStep(4); setStatus('第 4 步完成：轨迹文件已生成，可下载 SVG、TTF、G-code。'); showToast('文字轨迹已生成。'); } catch (error) { const detail = explainError(error); const message = `处理失败（输出轨迹）：${detail}`; showToast(message); setStatus(message); } finally { $('generate-btn').disabled = false; } });
+    const exportFontPackage = async (kind) => { const button = kind === 'observed' ? $('export-observed-btn') : $('export-all-btn'); button.disabled = true; setStatus(kind === 'observed' ? '正在导出全部已有字样…' : '正在生成并导出所有完整字库…'); try { renderFontPackage(await runJob('/api/font-package', {kind}, kind === 'observed' ? '正在导出已有字样完整字库…' : '正在生成所有完整字库，请稍候…')); } catch (error) { const message = `处理失败（完整字库）：${explainError(error)}`; showToast(message); setStatus(message); } finally { button.disabled = false; updateFontOutputs(state.training?.readiness || {}); } };
+    $('export-observed-btn').addEventListener('click', () => exportFontPackage('observed'));
+    $('export-all-btn').addEventListener('click', () => exportFontPackage('all'));
+    updateEngineHint(); setWorkflowProgress(0); setUnlocked(1); loadEnvironment();
+  </script>
+</body>
+</html>

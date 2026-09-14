@@ -1,0 +1,31 @@
+{
+  "console_errors": [],
+  "report": {
+    "charset_count": 14,
+    "observed_count": 10,
+    "experimental_count": 4,
+    "complete_for_requested_charset": true,
+    "universal_font": false,
+    "style_verified": false,
+    "preview_truncated": false,
+    "glyph_provenance": {
+      "快": "observed-outline",
+      "雪": "observed-outline",
+      "時": "observed-outline",
+      "晴": "observed-outline",
+      "佳": "observed-outline",
+      "想": "observed-outline",
+      "山": "observed-outline",
+      "陰": "observed-outline",
+      "張": "observed-outline",
+      "侯": "observed-outline",
+      "天": "experimental-mmh-geometry",
+      "地": "experimental-mmh-geometry",
+      "玄": "experimental-mmh-geometry",
+      "黃": "experimental-mmh-geometry"
+    },
+    "note": "TTF存轮廓，JSON存路径；图遍历不是真实笔顺；实验字不代表学会本人草书。"
+  },
+  "desktop": true,
+  "mobile_no_overflow": true
+}
